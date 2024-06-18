@@ -1,5 +1,6 @@
 package com.settasit.onepen
 
+import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.infiniteRepeatable
@@ -32,6 +33,7 @@ import io.github.sceneview.node.ModelNode
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+@SuppressLint("UnrememberedMutableState")
 @Composable
 fun Activity_2(
     navController: NavController,
@@ -63,7 +65,7 @@ fun Activity_2(
         val coroutineScope = rememberCoroutineScope()
         var isVisibleOne by remember { mutableStateOf(value = false) }
         var isVisibleTwo by remember { mutableStateOf(value = false) }
-        var modelFeature by remember { mutableStateOf(value = 0) }
+        var modelFeature by remember { mutableIntStateOf(value = 0) }
         LaunchedEffect(key1 = Unit) {
             delay(timeMillis = (1.0 * 1000).toLong())
             isVisibleOne = true

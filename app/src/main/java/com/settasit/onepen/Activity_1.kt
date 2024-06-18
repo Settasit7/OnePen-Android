@@ -175,7 +175,7 @@ fun TypewriterText(
     texts: List<String>,
     modifier: Modifier
 ) {
-    var textIndex by remember { mutableStateOf(value = 0) }
+    var textIndex by remember { mutableIntStateOf(value = 0) }
     var textToDisplay by remember { mutableStateOf(value = "") }
     LaunchedEffect(key1 = texts) {
         while (textIndex < texts.size) {
