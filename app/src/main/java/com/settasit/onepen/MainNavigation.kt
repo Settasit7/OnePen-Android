@@ -8,8 +8,8 @@ import androidx.navigation.compose.rememberNavController
 @Composable
 fun MainNavigation() {
     val navController = rememberNavController()
-    val modelStateOne = remember { mutableStateOf(value = 0) }
-    val modelStateTwo = remember { mutableStateOf(value = 0) }
+    val modelStateOne = remember { mutableIntStateOf(value = 0) }
+    val modelStateTwo = remember { mutableIntStateOf(value = 0) }
     NavHost(
         navController = navController,
         startDestination = "Activity 1"
@@ -26,8 +26,8 @@ fun MainNavigation() {
         }
         composable(route = "Activity 3") {
             Activity_3(
-                modelValueOne = modelStateOne.value,
-                modelValueTwo = modelStateTwo.value
+                modelValueOne = modelStateOne.intValue,
+                modelValueTwo = modelStateTwo.intValue
             )
         }
     }

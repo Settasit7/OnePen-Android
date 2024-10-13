@@ -1,12 +1,28 @@
 package com.settasit.onepen
 
 import android.animation.ValueAnimator
+import android.content.ContentValues
+import android.content.Context
+import android.graphics.Bitmap
+import android.media.MediaScannerConnection
+import android.os.Build
+import android.os.Environment
+import android.os.Handler
+import android.os.HandlerThread
+import android.provider.MediaStore
+import android.view.PixelCopy
+import android.view.SurfaceView
+import android.view.View
+import android.view.ViewGroup
 import android.view.animation.LinearInterpolator
+import android.widget.Toast
 import androidx.compose.animation.*
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -15,6 +31,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.ImageLoader
@@ -38,6 +55,8 @@ import io.github.sceneview.model.ModelInstance
 import io.github.sceneview.node.CubeNode
 import io.github.sceneview.node.ModelNode
 import kotlinx.coroutines.delay
+import java.io.File
+import java.io.IOException
 
 @Composable
 fun Activity_3(
@@ -56,16 +75,23 @@ fun Activity_3(
 @Composable
 fun ARScreen(modelEndValue: Int) {
     val childNodes = rememberNodes()
+    val context = LocalContext.current
     val engine = rememberEngine()
     val materialLoader = rememberMaterialLoader(engine = engine)
     val modelInstances = remember { mutableListOf<ModelInstance>() }
     val modelLoader = rememberModelLoader(engine = engine)
+    var arView by remember { mutableStateOf<View?>(value = null) }
     var frame by remember { mutableStateOf<Frame?>(value = null) }
-    var isVisible by remember { mutableStateOf(value = false) }
+    var isVisibleOne by remember { mutableStateOf(value = false) }
+    var isVisibleTwo by remember { mutableStateOf(value = false) }
     var planeRenderer by remember { mutableStateOf(value = false) }
     LaunchedEffect(key1 = Unit) {
-        delay(timeMillis = (5.0 * 1000).toLong())
-        isVisible = true
+        delay(timeMillis = (4.5 * 1000).toLong())
+        isVisibleOne = true
+    }
+    LaunchedEffect(key1 = Unit) {
+        delay(timeMillis = (5.5 * 1000).toLong())
+        isVisibleTwo = true
     }
     ARScene(
         modifier = Modifier.fillMaxSize(),
@@ -108,10 +134,13 @@ fun ARScreen(modelEndValue: Int) {
                     )
                 }
             }
-        })
+        }),
+        onViewUpdated = {
+            arView = this
+        }
     )
     AnimatedVisibility(
-        visible = isVisible && childNodes.isEmpty(),
+        visible = isVisibleTwo && childNodes.isEmpty(),
         enter = fadeIn(animationSpec = tween(
             durationMillis = (0.25 * 1000).toInt(),
             easing = LinearEasing
@@ -155,6 +184,108 @@ fun ARScreen(modelEndValue: Int) {
             }
         }
     }
+    AnimatedVisibility(
+        visible = isVisibleOne,
+        enter = fadeIn(animationSpec = tween(
+            durationMillis = (0.25 * 1000).toInt(),
+            easing = LinearEasing
+        ))
+    ) {
+        Box(modifier = Modifier
+            .fillMaxSize()
+            .padding(vertical = (0.14 * LocalConfiguration.current.screenHeightDp).dp)
+        ) {
+            Surface(
+                modifier = Modifier
+                    .align(alignment = Alignment.BottomCenter)
+                    .height(height = 48.dp)
+                    .width(width = 96.dp),
+                shape = RoundedCornerShape(size = 24.dp),
+                color = colorResource(id = R.color.YELLOW)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clickable(onClick = {
+                            val surfaceView = arView?.let { findSurfaceView(it) }
+                            surfaceView?.let {
+                                captureAndSaveScreenshot(context = context, arView = it)
+                            } ?: Toast.makeText(context, "SurfaceView not found", Toast.LENGTH_SHORT).show()
+                        }),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.baseline_camera_alt_24),
+                        contentDescription = null,
+                        tint = Color.Black
+                    )
+                }
+            }
+        }
+    }
+}
+
+fun findSurfaceView(view: View): SurfaceView? {
+    if (view is SurfaceView) {
+        return view
+    }
+    if (view is ViewGroup) {
+        for (i in 0 until view.childCount) {
+            val surfaceView = findSurfaceView(view.getChildAt(i))
+            if (surfaceView != null) {
+                return surfaceView
+            }
+        }
+    }
+    return null
+}
+
+fun captureAndSaveScreenshot(context: Context, arView: SurfaceView) {
+    val bitmap = Bitmap.createBitmap(arView.width, arView.height, Bitmap.Config.ARGB_8888)
+    val handlerThread = HandlerThread("PixelCopier").apply { start() }
+    PixelCopy.request(arView, bitmap, { result ->
+        if (result == PixelCopy.SUCCESS) {
+            try {
+                saveBitmapToDisk(context, bitmap)
+            } catch (e: IOException) {
+                Toast.makeText(context, "Error saving screenshot: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        } else {
+            Toast.makeText(context, "Failed to take screenshot", Toast.LENGTH_SHORT).show()
+        }
+        handlerThread.quitSafely()
+    }, Handler(handlerThread.looper))
+}
+
+fun saveBitmapToDisk(context: Context, bitmap: Bitmap) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        val resolver = context.contentResolver
+        val contentValues = ContentValues().apply {
+            put(MediaStore.Images.Media.DISPLAY_NAME, "AR_Screenshot_${System.currentTimeMillis()}.jpg")
+            put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+            put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/Screenshots")
+        }
+        val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+        uri?.let { param ->
+            resolver.openOutputStream(param).use { outputStream ->
+                outputStream?.let {
+                    bitmap.compress(Bitmap.CompressFormat.JPEG, 100, it)
+                } ?: run {
+                    Toast.makeText(context, "Failed to open OutputStream", Toast.LENGTH_SHORT).show()
+                }
+                Toast.makeText(context, "Screenshot saved!", Toast.LENGTH_SHORT).show()
+            }
+        }
+    } else {
+        val picturesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
+        val screenshotFile = File(picturesDir, "AR_Screenshot_${System.currentTimeMillis()}.jpg")
+        screenshotFile.outputStream().use {
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, it)
+            MediaScannerConnection.scanFile(context, arrayOf(screenshotFile.absolutePath), null, null)
+            Toast.makeText(context, "Screenshot saved!", Toast.LENGTH_SHORT).show()
+        }
+    }
 }
 
 fun createAnchorNode(
@@ -196,7 +327,33 @@ fun createAnchorNode(
                     count = 1
                 )
             }
-        }.removeLast(),
+        }.removeAt(modelInstances.apply {
+            if (isEmpty()) {
+                var assetFileLocation = ""
+                when (modelEndValue) {
+                    0 -> assetFileLocation = "models/model-1-1-1.glb"
+                    1 -> assetFileLocation = "models/model-1-1-2.glb"
+                    2 -> assetFileLocation = "models/model-1-1-3.glb"
+                    3 -> assetFileLocation = "models/model-1-1-4.glb"
+                    4 -> assetFileLocation = "models/model-1-2-1.glb"
+                    5 -> assetFileLocation = "models/model-1-2-2.glb"
+                    6 -> assetFileLocation = "models/model-1-2-3.glb"
+                    7 -> assetFileLocation = "models/model-1-2-4.glb"
+                    8 -> assetFileLocation = "models/model-1-3-1.glb"
+                    9 -> assetFileLocation = "models/model-1-3-2.glb"
+                    10 -> assetFileLocation = "models/model-1-3-3.glb"
+                    11 -> assetFileLocation = "models/model-1-3-4.glb"
+                    12 -> assetFileLocation = "models/model-1-4-1.glb"
+                    13 -> assetFileLocation = "models/model-1-4-2.glb"
+                    14 -> assetFileLocation = "models/model-1-4-3.glb"
+                    15 -> assetFileLocation = "models/model-1-4-4.glb"
+                }
+                this += modelLoader.createInstancedModel(
+                    assetFileLocation = assetFileLocation,
+                    count = 1
+                )
+            }
+        }.lastIndex),
         scaleToUnits = 0.25f
     ).apply {
         isEditable = true
