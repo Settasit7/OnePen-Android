@@ -98,7 +98,7 @@ fun Activity_1(navController: NavController) {
                     if (isVisibleOne) {
                         TypewriterText(
                             texts = listOf(
-                                "OnePen: An alternative for joining\nThailand's Loy Krathong Festival."
+                                "OnePen: An alternative for joining Thailand's Loy Krathong Festival."
                             ),
                             modifier = Modifier.align(alignment = Alignment.BottomStart)
                         )

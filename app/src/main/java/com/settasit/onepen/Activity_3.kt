@@ -15,7 +15,6 @@ import android.view.SurfaceView
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.LinearInterpolator
-import android.widget.Toast
 import androidx.compose.animation.*
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
@@ -140,7 +139,7 @@ fun ARScreen(modelEndValue: Int) {
         }
     )
     AnimatedVisibility(
-        visible = isVisibleTwo && childNodes.isEmpty(),
+        visible = isVisibleTwo,
         enter = fadeIn(animationSpec = tween(
             durationMillis = (0.25 * 1000).toInt(),
             easing = LinearEasing
@@ -160,7 +159,7 @@ fun ARScreen(modelEndValue: Int) {
                 .width(width = 216.dp)
             ) {
                 Text(
-                    text = "Tap anywhere to place your\nAR krathong.",
+                    text = "Tap anywhere to place your AR krathong.",
                     modifier = Modifier.align(alignment = Alignment.BottomStart),
                     color = colorResource(id = R.color.YELLOW),
                     fontWeight = FontWeight.Bold
@@ -210,7 +209,7 @@ fun ARScreen(modelEndValue: Int) {
                             val surfaceView = arView?.let { findSurfaceView(it) }
                             surfaceView?.let {
                                 captureAndSaveScreenshot(context = context, arView = it)
-                            } ?: Toast.makeText(context, "SurfaceView not found", Toast.LENGTH_SHORT).show()
+                            }
                         }),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
@@ -248,11 +247,9 @@ fun captureAndSaveScreenshot(context: Context, arView: SurfaceView) {
         if (result == PixelCopy.SUCCESS) {
             try {
                 saveBitmapToDisk(context, bitmap)
-            } catch (e: IOException) {
-                Toast.makeText(context, "Error saving screenshot: ${e.message}", Toast.LENGTH_LONG).show()
+            } catch (_: IOException) {
+
             }
-        } else {
-            Toast.makeText(context, "Failed to take screenshot", Toast.LENGTH_SHORT).show()
         }
         handlerThread.quitSafely()
     }, Handler(handlerThread.looper))
@@ -271,10 +268,7 @@ fun saveBitmapToDisk(context: Context, bitmap: Bitmap) {
             resolver.openOutputStream(param).use { outputStream ->
                 outputStream?.let {
                     bitmap.compress(Bitmap.CompressFormat.JPEG, 100, it)
-                } ?: run {
-                    Toast.makeText(context, "Failed to open OutputStream", Toast.LENGTH_SHORT).show()
                 }
-                Toast.makeText(context, "Screenshot saved!", Toast.LENGTH_SHORT).show()
             }
         }
     } else {
@@ -283,7 +277,6 @@ fun saveBitmapToDisk(context: Context, bitmap: Bitmap) {
         screenshotFile.outputStream().use {
             bitmap.compress(Bitmap.CompressFormat.JPEG, 100, it)
             MediaScannerConnection.scanFile(context, arrayOf(screenshotFile.absolutePath), null, null)
-            Toast.makeText(context, "Screenshot saved!", Toast.LENGTH_SHORT).show()
         }
     }
 }

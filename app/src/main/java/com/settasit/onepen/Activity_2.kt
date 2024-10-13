@@ -348,11 +348,11 @@ fun Activity_2(
                 ) {
                     var text = ""
                     when (modelFeature) {
-                        0 -> text = "First, prepare a 6-inch diameter\nbanana stem cut for the base."
-                        1 -> text = "Next, choose a banana leaf\nfolding style."
-                        2 -> text = "Then, pick a blessing flower\nto decorate."
-                        3 -> text = "Finally, add a candle and\nincense sticks."
-                        4 -> text = "Your krathong in now ready to join\nthe Loy Krathong Festival."
+                        0 -> text = "First, prepare a 6-inch diameter banana stem cut for the base."
+                        1 -> text = "Next, choose a banana leaf folding style."
+                        2 -> text = "Then, pick a blessing flower to decorate."
+                        3 -> text = "Finally, add a candle and incense sticks."
+                        4 -> text = "Your krathong in now ready to join the Loy Krathong Festival."
                     }
                     Text(
                         text = text,
