@@ -4,6 +4,7 @@ import android.animation.ValueAnimator
 import android.content.ContentValues
 import android.content.Context
 import android.graphics.Bitmap
+import android.media.MediaPlayer
 import android.media.MediaScannerConnection
 import android.os.Build
 import android.os.Environment
@@ -19,6 +20,7 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -53,7 +55,10 @@ import io.github.sceneview.loaders.ModelLoader
 import io.github.sceneview.model.ModelInstance
 import io.github.sceneview.node.CubeNode
 import io.github.sceneview.node.ModelNode
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.io.File
 import java.io.IOException
 
@@ -80,6 +85,7 @@ fun ARScreen(modelEndValue: Int) {
     val modelInstances = remember { mutableListOf<ModelInstance>() }
     val modelLoader = rememberModelLoader(engine = engine)
     var arView by remember { mutableStateOf<View?>(value = null) }
+    var flashLauncher by remember { mutableStateOf(value = false) }
     var frame by remember { mutableStateOf<Frame?>(value = null) }
     var isVisibleOne by remember { mutableStateOf(value = false) }
     var isVisibleTwo by remember { mutableStateOf(value = false) }
@@ -125,6 +131,7 @@ fun ARScreen(modelEndValue: Int) {
                     planeRenderer = false
                     childNodes += createAnchorNode(
                         anchor = anchor,
+                        context,
                         engine = engine,
                         materialLoader = materialLoader,
                         modelEndValue = modelEndValue,
@@ -210,6 +217,14 @@ fun ARScreen(modelEndValue: Int) {
                             surfaceView?.let {
                                 captureAndSaveScreenshot(context = context, arView = it)
                             }
+                            CoroutineScope(Dispatchers.Main).launch {
+                                delay(timeMillis = (0.1 * 1000).toLong())
+                                flashLauncher = true
+                            }
+                            CoroutineScope(Dispatchers.Main).launch {
+                                delay(timeMillis = (0.2 * 1000).toLong())
+                                flashLauncher = false
+                            }
                         }),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
@@ -221,6 +236,25 @@ fun ARScreen(modelEndValue: Int) {
                     )
                 }
             }
+        }
+    }
+    Box(modifier = Modifier.fillMaxSize()) {
+        AnimatedVisibility(
+            visible = flashLauncher,
+            enter = fadeIn(animationSpec = tween(
+                durationMillis = (0.1 * 1000).toInt(),
+                easing = LinearEasing
+            )),
+            exit = fadeOut(animationSpec = tween(
+                durationMillis = (0.3 * 1000).toInt(),
+                easing = LinearEasing
+            ))
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(color = Color.White)
+            )
         }
     }
 }
@@ -283,6 +317,7 @@ fun saveBitmapToDisk(context: Context, bitmap: Bitmap) {
 
 fun createAnchorNode(
     anchor: Anchor,
+    context: Context,
     engine: Engine,
     materialLoader: MaterialLoader,
     modelEndValue: Int,
@@ -298,16 +333,16 @@ fun createAnchorNode(
             if (isEmpty()) {
                 var assetFileLocation = ""
                 when (modelEndValue) {
-                    0 -> assetFileLocation = "models/model-1-1-1.glb"
-                    1 -> assetFileLocation = "models/model-1-1-2.glb"
-                    2 -> assetFileLocation = "models/model-1-1-3.glb"
-                    3 -> assetFileLocation = "models/model-1-1-4.glb"
-                    4 -> assetFileLocation = "models/model-1-2-1.glb"
-                    5 -> assetFileLocation = "models/model-1-2-2.glb"
-                    6 -> assetFileLocation = "models/model-1-2-3.glb"
-                    7 -> assetFileLocation = "models/model-1-2-4.glb"
-                    8 -> assetFileLocation = "models/model-1-3-1.glb"
-                    9 -> assetFileLocation = "models/model-1-3-2.glb"
+                     0 -> assetFileLocation = "models/model-1-1-1.glb"
+                     1 -> assetFileLocation = "models/model-1-1-2.glb"
+                     2 -> assetFileLocation = "models/model-1-1-3.glb"
+                     3 -> assetFileLocation = "models/model-1-1-4.glb"
+                     4 -> assetFileLocation = "models/model-1-2-1.glb"
+                     5 -> assetFileLocation = "models/model-1-2-2.glb"
+                     6 -> assetFileLocation = "models/model-1-2-3.glb"
+                     7 -> assetFileLocation = "models/model-1-2-4.glb"
+                     8 -> assetFileLocation = "models/model-1-3-1.glb"
+                     9 -> assetFileLocation = "models/model-1-3-2.glb"
                     10 -> assetFileLocation = "models/model-1-3-3.glb"
                     11 -> assetFileLocation = "models/model-1-3-4.glb"
                     12 -> assetFileLocation = "models/model-1-4-1.glb"
@@ -324,16 +359,16 @@ fun createAnchorNode(
             if (isEmpty()) {
                 var assetFileLocation = ""
                 when (modelEndValue) {
-                    0 -> assetFileLocation = "models/model-1-1-1.glb"
-                    1 -> assetFileLocation = "models/model-1-1-2.glb"
-                    2 -> assetFileLocation = "models/model-1-1-3.glb"
-                    3 -> assetFileLocation = "models/model-1-1-4.glb"
-                    4 -> assetFileLocation = "models/model-1-2-1.glb"
-                    5 -> assetFileLocation = "models/model-1-2-2.glb"
-                    6 -> assetFileLocation = "models/model-1-2-3.glb"
-                    7 -> assetFileLocation = "models/model-1-2-4.glb"
-                    8 -> assetFileLocation = "models/model-1-3-1.glb"
-                    9 -> assetFileLocation = "models/model-1-3-2.glb"
+                     0 -> assetFileLocation = "models/model-1-1-1.glb"
+                     1 -> assetFileLocation = "models/model-1-1-2.glb"
+                     2 -> assetFileLocation = "models/model-1-1-3.glb"
+                     3 -> assetFileLocation = "models/model-1-1-4.glb"
+                     4 -> assetFileLocation = "models/model-1-2-1.glb"
+                     5 -> assetFileLocation = "models/model-1-2-2.glb"
+                     6 -> assetFileLocation = "models/model-1-2-3.glb"
+                     7 -> assetFileLocation = "models/model-1-2-4.glb"
+                     8 -> assetFileLocation = "models/model-1-3-1.glb"
+                     9 -> assetFileLocation = "models/model-1-3-2.glb"
                     10 -> assetFileLocation = "models/model-1-3-3.glb"
                     11 -> assetFileLocation = "models/model-1-3-4.glb"
                     12 -> assetFileLocation = "models/model-1-4-1.glb"
@@ -403,7 +438,19 @@ fun createAnchorNode(
     }
     translateYAnimator.start()
     rotateAnimator.start()
+    playAudio(context)
     return anchorNode
+}
+
+fun playAudio(context: Context) {
+    val mediaPlayer = MediaPlayer.create(context, R.raw.arisu)
+    CoroutineScope(Dispatchers.Main).launch {
+        delay(timeMillis = (0.1 * 1000).toLong())
+        mediaPlayer.start()
+    }
+    mediaPlayer.setOnCompletionListener {
+        it.release()
+    }
 }
 
 @Composable
