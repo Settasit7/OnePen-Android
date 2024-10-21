@@ -4,7 +4,6 @@ import android.animation.ValueAnimator
 import android.content.ContentValues
 import android.content.Context
 import android.graphics.Bitmap
-import android.media.MediaPlayer
 import android.media.MediaScannerConnection
 import android.os.Build
 import android.os.Environment
@@ -85,11 +84,11 @@ fun ARScreen(modelEndValue: Int) {
     val modelInstances = remember { mutableListOf<ModelInstance>() }
     val modelLoader = rememberModelLoader(engine = engine)
     var arView by remember { mutableStateOf<View?>(value = null) }
-    var flashLauncher by remember { mutableStateOf(value = false) }
     var frame by remember { mutableStateOf<Frame?>(value = null) }
     var isVisibleOne by remember { mutableStateOf(value = false) }
     var isVisibleTwo by remember { mutableStateOf(value = false) }
     var planeRenderer by remember { mutableStateOf(value = false) }
+    var screenFlash by remember { mutableStateOf(value = false) }
     LaunchedEffect(key1 = Unit) {
         delay(timeMillis = (4.5 * 1000).toLong())
         isVisibleOne = true
@@ -131,7 +130,6 @@ fun ARScreen(modelEndValue: Int) {
                     planeRenderer = false
                     childNodes += createAnchorNode(
                         anchor = anchor,
-                        context,
                         engine = engine,
                         materialLoader = materialLoader,
                         modelEndValue = modelEndValue,
@@ -145,6 +143,23 @@ fun ARScreen(modelEndValue: Int) {
             arView = this
         }
     )
+    AnimatedVisibility(
+        visible = screenFlash,
+        enter = fadeIn(animationSpec = tween(
+            durationMillis = (0.1 * 1000).toInt(),
+            easing = LinearEasing
+        )),
+        exit = fadeOut(animationSpec = tween(
+            durationMillis = (0.3 * 1000).toInt(),
+            easing = LinearEasing
+        ))
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(color = Color.White)
+        )
+    }
     AnimatedVisibility(
         visible = isVisibleTwo,
         enter = fadeIn(animationSpec = tween(
@@ -219,11 +234,11 @@ fun ARScreen(modelEndValue: Int) {
                             }
                             CoroutineScope(Dispatchers.Main).launch {
                                 delay(timeMillis = (0.1 * 1000).toLong())
-                                flashLauncher = true
+                                screenFlash = true
                             }
                             CoroutineScope(Dispatchers.Main).launch {
                                 delay(timeMillis = (0.2 * 1000).toLong())
-                                flashLauncher = false
+                                screenFlash = false
                             }
                         }),
                     horizontalArrangement = Arrangement.Center,
@@ -236,25 +251,6 @@ fun ARScreen(modelEndValue: Int) {
                     )
                 }
             }
-        }
-    }
-    Box(modifier = Modifier.fillMaxSize()) {
-        AnimatedVisibility(
-            visible = flashLauncher,
-            enter = fadeIn(animationSpec = tween(
-                durationMillis = (0.1 * 1000).toInt(),
-                easing = LinearEasing
-            )),
-            exit = fadeOut(animationSpec = tween(
-                durationMillis = (0.3 * 1000).toInt(),
-                easing = LinearEasing
-            ))
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(color = Color.White)
-            )
         }
     }
 }
@@ -317,7 +313,6 @@ fun saveBitmapToDisk(context: Context, bitmap: Bitmap) {
 
 fun createAnchorNode(
     anchor: Anchor,
-    context: Context,
     engine: Engine,
     materialLoader: MaterialLoader,
     modelEndValue: Int,
@@ -438,19 +433,7 @@ fun createAnchorNode(
     }
     translateYAnimator.start()
     rotateAnimator.start()
-    playAudio(context)
     return anchorNode
-}
-
-fun playAudio(context: Context) {
-    val mediaPlayer = MediaPlayer.create(context, R.raw.arisu)
-    CoroutineScope(Dispatchers.Main).launch {
-        delay(timeMillis = (0.1 * 1000).toLong())
-        mediaPlayer.start()
-    }
-    mediaPlayer.setOnCompletionListener {
-        it.release()
-    }
 }
 
 @Composable
